@@ -1,0 +1,32 @@
+services:
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    environment:
+      - VITE_APP_PORT=3000
+      - VITE_APP_ENABLE_ESLINT=false
+      - CHOKIDAR_USEPOLLING=true
+      - BROWSER=none
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    command:
+      - sh
+      - -ec
+      - |
+        CI=true yarn install --frozen-lockfile --network-timeout 600000 --ignore-scripts
+        cd excalidraw-app
+        exec npx vite --host 0.0.0.0 --port 3000 --strictPort
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://localhost:3000/ || (echo 'vite dev server not responding'; exit 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+
+volumes:
+  node_modules:
