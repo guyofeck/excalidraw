@@ -5,7 +5,7 @@ import {
   arrayToMap,
 } from "@excalidraw/common";
 
-import { getNonDeletedElements } from "@excalidraw/element";
+import { getCommonBounds, getNonDeletedElements } from "@excalidraw/element";
 
 import { LinearElementEditor } from "@excalidraw/element";
 
@@ -31,7 +31,9 @@ import { useStylesPanelMode } from "../components/App";
 
 import { register } from "./register";
 
-export const actionDuplicateSelection = register({
+export const actionDuplicateSelection = register<{
+  duplicateToRight?: boolean;
+} | null>({
   name: "duplicateSelection",
   label: "labels.duplicateSelection",
   icon: DuplicateIcon,
@@ -42,7 +44,10 @@ export const actionDuplicateSelection = register({
     }
 
     // duplicate selected point(s) if editing a line
-    if (appState.selectedLinearElement?.isEditing) {
+    if (
+      appState.selectedLinearElement?.isEditing &&
+      !formData?.duplicateToRight
+    ) {
       // TODO: Invariants should be checked here instead of duplicateSelectedPoints()
       try {
         const newAppState = LinearElementEditor.duplicateSelectedPoints(
@@ -60,23 +65,33 @@ export const actionDuplicateSelection = register({
       }
     }
 
+    const selectedElements = getSelectedElements(elements, appState, {
+      includeBoundTextElement: true,
+      includeElementsInFrames: true,
+    });
+    let offsetX = DEFAULT_GRID_SIZE / 2;
+    let offsetY = DEFAULT_GRID_SIZE / 2;
+    if (formData?.duplicateToRight) {
+      if (!selectedElements.length) {
+        return false;
+      }
+      const [minX, , maxX] = getCommonBounds(selectedElements);
+      offsetX = maxX - minX + 20;
+      offsetY = 0;
+    }
+
     let { duplicatedElements, elementsWithDuplicates } = duplicateElements({
       type: "in-place",
       elements,
-      idsOfElementsToDuplicate: arrayToMap(
-        getSelectedElements(elements, appState, {
-          includeBoundTextElement: true,
-          includeElementsInFrames: true,
-        }),
-      ),
+      idsOfElementsToDuplicate: arrayToMap(selectedElements),
       appState,
       randomizeSeed: true,
       overrides: ({ origElement, origIdToDuplicateId }) => {
         const duplicateFrameId =
           origElement.frameId && origIdToDuplicateId.get(origElement.frameId);
         return {
-          x: origElement.x + DEFAULT_GRID_SIZE / 2,
-          y: origElement.y + DEFAULT_GRID_SIZE / 2,
+          x: origElement.x + offsetX,
+          y: origElement.y + offsetY,
           frameId: duplicateFrameId ?? origElement.frameId,
         };
       },
@@ -132,4 +147,20 @@ export const actionDuplicateSelection = register({
       />
     );
   },
+});
+
+export const actionDuplicateSelectionToRight = register({
+  name: "duplicateSelectionToRight",
+  label: "labels.duplicateSelectionToRight",
+  icon: DuplicateIcon,
+  trackEvent: { category: "element" },
+  predicate: (elements, appState) =>
+    isSomeElementSelected(getNonDeletedElements(elements), appState),
+  perform: (elements, appState, _formData, app) =>
+    actionDuplicateSelection.perform(
+      elements,
+      appState,
+      { duplicateToRight: true },
+      app,
+    ),
 });

@@ -134,6 +134,7 @@ describe("contextMenu element", () => {
       "sendToBack",
       "bringToFront",
       "duplicateSelection",
+      "duplicateSelectionToRight",
       "hyperlink",
       "copyElementLink",
       "toggleElementLock",
@@ -212,7 +213,7 @@ describe("contextMenu element", () => {
     const contextMenu = UI.queryContextMenu();
     const contextMenuOptions =
       contextMenu?.querySelectorAll(".context-menu li");
-    const expectedShortcutNames: ShortcutName[] = [
+    const expectedShortcutNames: ActionName[] = [
       "cut",
       "copy",
       "paste",
@@ -229,6 +230,7 @@ describe("contextMenu element", () => {
       "sendToBack",
       "bringToFront",
       "duplicateSelection",
+      "duplicateSelectionToRight",
       "toggleElementLock",
     ];
 
@@ -287,6 +289,7 @@ describe("contextMenu element", () => {
       "sendToBack",
       "bringToFront",
       "duplicateSelection",
+      "duplicateSelectionToRight",
       "toggleElementLock",
     ];
 
