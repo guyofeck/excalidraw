@@ -5,7 +5,7 @@ import {
   arrayToMap,
 } from "@excalidraw/common";
 
-import { getNonDeletedElements } from "@excalidraw/element";
+import { getCommonBounds, getNonDeletedElements } from "@excalidraw/element";
 
 import { LinearElementEditor } from "@excalidraw/element";
 
@@ -31,18 +31,17 @@ import { useStylesPanelMode } from "../components/App";
 
 import { register } from "./register";
 
-export const actionDuplicateSelection = register({
-  name: "duplicateSelection",
-  label: "labels.duplicateSelection",
-  icon: DuplicateIcon,
-  trackEvent: { category: "element" },
-  perform: (elements, appState, formData, app) => {
+import type { Action } from "./types";
+
+const createDuplicateSelectionPerform =
+  (toRight = false): Action["perform"] =>
+  (elements, appState, formData, app) => {
     if (appState.selectedElementsAreBeingDragged) {
       return false;
     }
 
     // duplicate selected point(s) if editing a line
-    if (appState.selectedLinearElement?.isEditing) {
+    if (!toRight && appState.selectedLinearElement?.isEditing) {
       // TODO: Invariants should be checked here instead of duplicateSelectedPoints()
       try {
         const newAppState = LinearElementEditor.duplicateSelectedPoints(
@@ -60,23 +59,29 @@ export const actionDuplicateSelection = register({
       }
     }
 
+    const selectedElements = getSelectedElements(elements, appState, {
+      includeBoundTextElement: true,
+      includeElementsInFrames: true,
+    });
+    if (toRight && !selectedElements.length) {
+      return false;
+    }
+    const [minX, , maxX] = getCommonBounds(selectedElements);
+    const offsetX = toRight ? maxX - minX + 20 : DEFAULT_GRID_SIZE / 2;
+    const offsetY = toRight ? 0 : DEFAULT_GRID_SIZE / 2;
+
     let { duplicatedElements, elementsWithDuplicates } = duplicateElements({
       type: "in-place",
       elements,
-      idsOfElementsToDuplicate: arrayToMap(
-        getSelectedElements(elements, appState, {
-          includeBoundTextElement: true,
-          includeElementsInFrames: true,
-        }),
-      ),
+      idsOfElementsToDuplicate: arrayToMap(selectedElements),
       appState,
       randomizeSeed: true,
       overrides: ({ origElement, origIdToDuplicateId }) => {
         const duplicateFrameId =
           origElement.frameId && origIdToDuplicateId.get(origElement.frameId);
         return {
-          x: origElement.x + DEFAULT_GRID_SIZE / 2,
-          y: origElement.y + DEFAULT_GRID_SIZE / 2,
+          x: origElement.x + offsetX,
+          y: origElement.y + offsetY,
           frameId: duplicateFrameId ?? origElement.frameId,
         };
       },
@@ -107,7 +112,14 @@ export const actionDuplicateSelection = register({
       },
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     };
-  },
+  };
+
+export const actionDuplicateSelection = register({
+  name: "duplicateSelection",
+  label: "labels.duplicateSelection",
+  icon: DuplicateIcon,
+  trackEvent: { category: "element" },
+  perform: createDuplicateSelectionPerform(),
   keyTest: (event) => event[KEYS.CTRL_OR_CMD] && event.key === KEYS.D,
   PanelComponent: ({ elements, appState, updateData, app }) => {
     const isMobile = useStylesPanelMode() === "mobile";
@@ -132,4 +144,15 @@ export const actionDuplicateSelection = register({
       />
     );
   },
+});
+
+export const actionDuplicateSelectionToRight = register({
+  name: "duplicateSelectionToRight",
+  label: "labels.duplicateSelectionToRight",
+  icon: DuplicateIcon,
+  trackEvent: { category: "element" },
+  predicate: (elements, appState) =>
+    !appState.selectedLinearElement?.isEditing &&
+    isSomeElementSelected(getNonDeletedElements(elements), appState),
+  perform: createDuplicateSelectionPerform(true),
 });
