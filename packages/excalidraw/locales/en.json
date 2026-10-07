@@ -554,6 +554,7 @@
     "generalStats": "General",
     "elementProperties": "Shape properties",
     "total": "Total",
+    "totalElements": "Total elements",
     "version": "Version",
     "versionCopy": "Click to copy",
     "versionNotAvailable": "Version not available",

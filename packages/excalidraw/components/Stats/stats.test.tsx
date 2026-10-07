@@ -357,6 +357,29 @@ describe("stats for a non-generic element", () => {
     restoreOriginalGetBoundingClientRect();
   });
 
+  it("should show the total number of non-deleted canvas elements", () => {
+    const getCount = () =>
+      queryByTestId(stats!, "stats-total-elements")?.lastElementChild
+        ?.textContent;
+
+    expect(getCount()).toBe("0");
+
+    const rectangle = API.createElement({ type: "rectangle" });
+    const text = API.createElement({ type: "text" });
+    const image = API.createElement({ type: "image" });
+    const deleted = API.createElement({ type: "ellipse", isDeleted: true });
+    API.setElements([rectangle, text, image, deleted]);
+    API.setSelectedElements([rectangle]);
+
+    expect(getCount()).toBe("3");
+
+    API.setElements([rectangle]);
+    expect(getCount()).toBe("1");
+
+    API.setElements([]);
+    expect(getCount()).toBe("0");
+  });
+
   it("text element", async () => {
     UI.clickTool("text");
     mouse.clickAt(20, 30);
