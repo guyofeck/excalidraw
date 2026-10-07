@@ -209,7 +209,7 @@ export const StatsInner = memo(
             <StatsRows>
               <StatsRow heading>{t("stats.scene")}</StatsRow>
               <StatsRow columns={2}>
-                <div>{t("stats.shapes")}</div>
+                <div>{t("stats.totalElements")}</div>
                 <div>{elements.length}</div>
               </StatsRow>
               <StatsRow columns={2}>

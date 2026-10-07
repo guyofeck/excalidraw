@@ -3,7 +3,7 @@ import { act, fireEvent, queryByTestId } from "@testing-library/react";
 import React from "react";
 import { vi } from "vitest";
 
-import { setDateTimeForTests, reseed } from "@excalidraw/common";
+import { setDateTimeForTests, reseed, STATS_PANELS } from "@excalidraw/common";
 
 import { isInGroup } from "@excalidraw/element";
 
@@ -63,6 +63,36 @@ const testInputProperty = (
     expect(element[property]).toBe(Number(nextValue));
   }
 };
+
+describe("canvas element total", () => {
+  it("counts all non-deleted elements regardless of selection and updates with the scene", async () => {
+    await render(<Excalidraw handleKeyboardGlobally={true} />);
+    API.setElements([]);
+    API.setAppState({
+      stats: { open: true, panels: STATS_PANELS.generalStats },
+    });
+
+    const getTotal = () =>
+      UI.queryStats()
+        ?.querySelector(".exc-stats__rows")
+        ?.querySelector(".exc-stats__row:nth-child(2)");
+
+    expect(getTotal()?.textContent).toBe(`${t("stats.totalElements")}0`);
+
+    const rectangle = API.createElement({ type: "rectangle" });
+    const text = API.createElement({ type: "text" });
+    const deleted = API.createElement({ type: "ellipse", isDeleted: true });
+    API.setElements([rectangle, text, deleted]);
+    API.setSelectedElements([rectangle]);
+    expect(getTotal()?.textContent).toBe(`${t("stats.totalElements")}2`);
+
+    API.setElements([rectangle]);
+    expect(getTotal()?.textContent).toBe(`${t("stats.totalElements")}1`);
+
+    API.setElements([]);
+    expect(getTotal()?.textContent).toBe(`${t("stats.totalElements")}0`);
+  });
+});
 
 describe("step sized value", () => {
   it("should return edge values correctly", () => {
