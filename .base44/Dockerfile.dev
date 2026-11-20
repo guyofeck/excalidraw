@@ -1,0 +1,6 @@
+FROM node:22-bookworm
+
+# Pin the package manager declared by the repo (yarn 1.22.22 via packageManager)
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+
+WORKDIR /app
