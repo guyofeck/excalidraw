@@ -1,0 +1,40 @@
+# Base44 sandbox compose for the Excalidraw monorepo.
+# Runs the Vite dev server from the cloned source (bind-mounted), so edits
+# hot-reload. Never use the repo's own Dockerfile here: it bakes a production
+# build into an nginx image.
+services:
+  web:
+    image: node:22
+    working_dir: /app
+    # Yarn 1 workspaces: install from the root lockfile, then run the app's
+    # own Vite dev server bound to 0.0.0.0 so the sandbox proxy can reach it.
+    command:
+      - sh
+      - -ec
+      - yarn install --frozen-lockfile --network-timeout 600000 && exec yarn --cwd ./excalidraw-app vite --host 0.0.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      - CI=true
+      # Vite's server.open would try to launch a browser inside the container.
+      - BROWSER=none
+      # The dev server port (vite.config reads VITE_APP_PORT; .env.development sets 3001).
+      - VITE_APP_PORT=3000
+      - BASE44_PREVIEW_MODE
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "fetch('http://127.0.0.1:3000/').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # first boot installs the dependency tree
+      start_period: 300s
+    labels:
+      base44.project: "Excalidraw app"
+      base44.kind: web
+      base44.port: 3000
