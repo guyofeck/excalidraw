@@ -33,15 +33,7 @@ export const AppWelcomeScreen: React.FC<{
         return bit;
       });
   } else {
-    headingContent = (
-      <>
-        {t("welcomeScreen.app.center_heading")}
-        <br />
-        {t("welcomeScreen.app.center_heading_line2")}
-        <br />
-        {t("welcomeScreen.app.center_heading_line3")}
-      </>
-    );
+    headingContent = t("welcomeScreen.app.center_heading");
   }
 
   return (
