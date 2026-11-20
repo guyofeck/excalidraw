@@ -1,0 +1,4 @@
+FROM node:22-bookworm
+
+# The image already ships yarn 1.22.22, the repo's pinned package manager.
+WORKDIR /app
